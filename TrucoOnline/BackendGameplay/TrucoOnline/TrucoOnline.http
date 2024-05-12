@@ -1,0 +1,12 @@
+@TrucoOnline_HostAddress = http://localhost:5089
+
+GET {{TrucoOnline_HostAddress}}/game?gameId=bc962c8f-06da-47b7-ab56-fc4ad414ce4e
+Accept: application/json
+
+
+###
+
+POST {{TrucoOnline_HostAddress}}/game/
+Accept: application/json
+
+###
