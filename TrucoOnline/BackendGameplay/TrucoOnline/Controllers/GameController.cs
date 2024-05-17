@@ -13,11 +13,11 @@ namespace TrucoOnline.Controllers {
             _gameService = gameService;
         }
         [HttpPost]
-        public ActionResult<Game> NewGame() {
+        public ActionResult<Game> StartNewLobby() {
             try {
-                var game = _gameService.GetGame();
-                GameManager.games.Add(game);
-                return Ok(game);
+                var lobby = _gameService.StartNewLobby();
+                GameManager.Lobbies.Add(lobby);
+                return Ok(lobby);
             }
             catch (Exception e) {
                 return StatusCode(500, e.Message);
@@ -26,14 +26,14 @@ namespace TrucoOnline.Controllers {
 
         [HttpGet]
         public ActionResult<Game> GetGame(
-            [FromQuery(Name = "gameId")][Required(ErrorMessage = "Query Parameter gameId is required")] Guid gameId
+            [FromQuery(Name = "lobbyId")][Required(ErrorMessage = "Query Parameter lobbyId is required")] Guid lobbyId
             ) {
             try {
-                var game = GameManager.games.FirstOrDefault(g => g.Id == gameId);
-                if (game is null) {
+                var lobby = GameManager.Lobbies.FirstOrDefault(g => g.Id == lobbyId);
+                if (lobby is null) {
                     return NotFound();
                 }
-                return Ok(game);
+                return Ok(lobby);
             }
             catch (Exception e) {
                 return StatusCode(500, e.Message);

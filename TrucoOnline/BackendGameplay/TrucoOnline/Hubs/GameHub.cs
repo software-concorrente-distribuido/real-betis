@@ -4,48 +4,65 @@ using TrucoOnline.Models;
 namespace TrucoOnline.Hubs {
     public class GameHub : Hub {
 
-        public async void SubscribeToGame(Guid gameId) {
-            var game = GameManager.games.Find(g => g.Id == gameId);
-            await Groups.AddToGroupAsync(Context.ConnectionId, "game_" + gameId);
-            await Clients.Caller.SendAsync("GameSubscribed", game);
+        public async void SubscribeToLobby(Guid lobbyId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                throw new Exception("Erro ao buscar lobby");
+            }
+            await Groups.AddToGroupAsync(Context.ConnectionId, "lobby_" + lobbyId);
+            await Clients.Caller.SendAsync("LobbySubscribed", lobby);
         }
 
-        public async void UnsubscribeFromGame(string gameId) {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "game_" + gameId);
+        public async void UnsubscribeFromLobby(string lobbyId) {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "lobby_" + lobbyId);
         }
 
-        public async void PlayCard(Guid gameId, Guid playerId, byte cardIndex) {
-            var game = GameManager.games.Find(g => g.Id == gameId);
-            if (game is null) {
+        public async void PlayCard(Guid lobbyId, Guid playerId, byte cardIndex) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
                 return;
             }
-            if (game.CurrentPlayerIndex != game.Players.FindIndex(p => p.Id == playerId)) {
+            if (lobby.Games.Last().CurrentPlayerIndex != lobby.Players.FindIndex(p => p.Id == playerId)) {
                 Console.WriteLine("NOT THIS PLAYER TURN!");
                 return;
             }
-            game.PlayCard(playerId, cardIndex);
-            await Clients.Group("game_" + gameId).SendAsync("CardPlayed", new { playerId, playedCard = game.LastPlayedCard, currentPlayer = game.CurrentPlayerIndex });
+            lobby.PlayCard(playerId, cardIndex);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard = lobby.Games.Last().LastPlayedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
 
-            if (game.IsLastRoundFinished()) {
-                if (game.Rounds.Count < 3) {
-                    StartRound(gameId);
+            if (lobby.Games.Last().IsLastRoundFinished()) {
+                if (lobby.Games.Last().Team1Points == 2 || lobby.Games.Last().Team2Points == 2) {
+                    FinishGame(lobbyId);
                 }
                 else {
-                    FinishGame(gameId);
+                    StartRound(lobbyId);
                 }
             }
         }
 
-        public async void StartRound(Guid gameId) {
-            var game = GameManager.games.Find(g => g.Id == gameId);
-            var winner = game.LastRound.GetRoundWinner();
-            game.StartRound();
-            await Clients.Group("game_" + gameId).SendAsync("RoundStarted", new { newRound = game.LastRound, lastRoundWinner = winner, team1Points = game.Team1Points, team2Points = game.Team2Points });
+        public async void StartRound(Guid lobbyId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                throw new Exception("Erro ao buscar lobby");
+            }
+            var winner = lobby.Games.Last().LastRound.GetRoundWinner();
+            lobby.StartGameRound();
+            await Clients.Group("lobby_" + lobbyId).SendAsync("RoundStarted", new { newRound = lobby.Games.Last().LastRound, lastRoundWinner = winner, team1Points = lobby.Games.Last().Team1Points, team2Points = lobby.Games.Last().Team2Points });
         }
 
-        public async void FinishGame(Guid gameId) {
-            var game = GameManager.games.Find(g => g.Id == gameId);
-            await Clients.Group("game_" + gameId).SendAsync("GameFinished", game);
+        public async void FinishGame(Guid lobbyId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            lobby.FinishGame();
+            await Clients.Group("lobby_" + lobbyId).SendAsync("GameFinished", new { Team1Points = lobby.Team1Points, Team2Points = lobby.Team2Points });
+
+            if (lobby.Team1Points != 12 && lobby.Team2Points != 12) {
+                GoToNextGame(lobbyId);
+            }
+        }
+
+        public async void GoToNextGame(Guid lobbyId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            lobby.StartGame();
+            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players });
         }
     }
 }
