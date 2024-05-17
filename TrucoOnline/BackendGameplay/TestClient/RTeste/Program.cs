@@ -10,7 +10,7 @@ namespace Realtime {
             string hubUrl = "http://localhost:5089/gameHub";
             string invokeMethodName = "SubscribeToLobby";
             string onMethodName = "CardPlayed";
-            string gameId = "3568c637-292d-4016-a4a9-cb119d7c5fea";
+            string gameId = "18046b06-b4aa-4218-8b2a-c75f2b32c064";
             Lobby lobby = null;
             object gameLock = new object();
 
@@ -35,7 +35,15 @@ namespace Realtime {
                     Console.WriteLine("****** ROUND STARTED ******");
                     Console.WriteLine("\n");
 
-                    Console.WriteLine("Last Round Winner: " + param.LastRoundWinner.Player.DisplayName + " with " + param.LastRoundWinner.Card.Value + " of " + param.LastRoundWinner.Card.Suit);
+                    if (param.LastRoundWinner != null) {
+                        Console.WriteLine("Last Round Winner: " + param.LastRoundWinner.Player.DisplayName + " with " + param.LastRoundWinner.Card.Value + " of " + param.LastRoundWinner.Card.Suit);
+                    }
+
+                    if (param.NewRound.IsCangado) {
+                        Console.WriteLine("*************");
+                        Console.WriteLine("Cangado!!!");
+                        Console.WriteLine("*************");
+                    }
                     Console.WriteLine("Current score:");
                     Console.WriteLine("Team 1: " + param.Team1Points);
                     Console.WriteLine("Team 2: " + param.Team2Points);

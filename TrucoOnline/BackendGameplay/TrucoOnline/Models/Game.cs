@@ -30,6 +30,10 @@
         }
 
         public void PlayCard(Player player, byte cardIndex) {
+            if (LastRound.IsCangado) {
+                var highestStrength = player.Cards.Max(c => c.Strength);
+                cardIndex = (byte)player.Cards.FindIndex(c => c.Strength == highestStrength);
+            }
             var card = player.Cards[cardIndex];
             player.Cards.RemoveAt(cardIndex);
             LastPlayedCard = card;
@@ -37,21 +41,34 @@
             LastRound.Cards.Push(new PlayedCard(card, player));
         }
 
-        public void StartRound() {
+        public void StartRound(bool isCangado) {
             LastRound = new Round();
+            LastRound.IsCangado = isCangado;
             Rounds.Add(LastRound);
         }
 
         public void FinishRound(List<Player> players) {
             var winner = LastRound.GetRoundWinner();
-            if (players.IndexOf(winner.Player) % 2 == 0) {
-                Team1Points++;
-            }
-            else {
-                Team2Points++;
+            if (winner is not null) {
+                if (players.IndexOf(winner.Player) % 2 == 0) {
+                    if (LastRound.IsCangado) {
+                        Team1Points = 2;
+                    }
+                    else {
+                        Team1Points++;
+                    }
+                }
+                else {
+                    if (LastRound.IsCangado) {
+                        Team2Points = 2;
+                    }
+                    else {
+                        Team2Points++;
+                    }
+                }
             }
 
-            if (Team1Points == 2 || Team2Points == 2) {
+            if (Team1Points == 2 || Team2Points == 2 || Rounds.Count == 3) {
                 IsGameFinished = true;
             }
         }

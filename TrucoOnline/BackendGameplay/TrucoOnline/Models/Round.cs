@@ -2,6 +2,7 @@
     public class Round {
         public Stack<PlayedCard> Cards { get; set; } = new Stack<PlayedCard>(4);
         public bool IsConcluded { get; set; }
+        public bool IsCangado { get; set; }
 
         public PlayedCard GetRoundWinner() {
             var winner = new PlayedCard(new Card("", CardSuit.Clubs, 0), null);

@@ -1,6 +1,6 @@
 @TrucoOnline_HostAddress = http://localhost:5089
 
-GET {{TrucoOnline_HostAddress}}/game?lobbyId=e0d7a05b-c3ab-40d8-93a4-6e5814c56735
+GET {{TrucoOnline_HostAddress}}/game?lobbyId=bed16efa-ed2d-4290-80bf-a40822c415e0
 Accept: application/json
 
 

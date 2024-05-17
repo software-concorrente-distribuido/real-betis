@@ -30,7 +30,7 @@ namespace TrucoOnline.Hubs {
             await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard = lobby.Games.Last().LastPlayedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
 
             if (lobby.Games.Last().IsLastRoundFinished()) {
-                if (lobby.Games.Last().Team1Points == 2 || lobby.Games.Last().Team2Points == 2) {
+                if (lobby.Games.Last().IsGameFinished) {
                     FinishGame(lobbyId);
                 }
                 else {
@@ -45,7 +45,8 @@ namespace TrucoOnline.Hubs {
                 throw new Exception("Erro ao buscar lobby");
             }
             var winner = lobby.Games.Last().LastRound.GetRoundWinner();
-            lobby.StartGameRound();
+            var isCangado = winner is null;
+            lobby.StartGameRound(isCangado);
             await Clients.Group("lobby_" + lobbyId).SendAsync("RoundStarted", new { newRound = lobby.Games.Last().LastRound, lastRoundWinner = winner, team1Points = lobby.Games.Last().Team1Points, team2Points = lobby.Games.Last().Team2Points });
         }
 

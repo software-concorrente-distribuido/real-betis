@@ -23,7 +23,10 @@
         public void FinishGame() {
             var game = Games.Last();
             var winner = game.GetGameWinner();
-            if (winner == 1) {
+            if (winner is null) {
+                // Não faz nada pq ficou empatado o jogo
+            }
+            else if (winner == 1) {
                 Team1Points++;
             }
             else if (winner == 2) {
@@ -51,11 +54,14 @@
                 var winner = game.LastRound.GetRoundWinner();
                 if (winner is null) {
                     // Cangou 
+                    var highestCardStrength = game.LastRound.Cards.Max(c => c.Card.Strength);
+                    var lastPlayedHighestCard = game.LastRound.Cards.Last(c => c.Card.Strength == highestCardStrength);
+                    game.CurrentPlayerIndex = (Players.IndexOf(lastPlayedHighestCard.Player) + 1) % 4;
                 }
                 else {
                     game.CurrentPlayerIndex = Players.IndexOf(winner.Player);
-                    FinishGameRound();
                 }
+                FinishGameRound();
             }
             else {
                 game.CurrentPlayerIndex = (game.CurrentPlayerIndex + 1) % 4;
@@ -66,8 +72,8 @@
             Games.Last().FinishRound(Players);
         }
 
-        public void StartGameRound() {
-            Games.Last().StartRound();
+        public void StartGameRound(bool isCangado) {
+            Games.Last().StartRound(isCangado);
         }
     }
 }
