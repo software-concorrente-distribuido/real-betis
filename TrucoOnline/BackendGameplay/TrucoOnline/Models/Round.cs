@@ -5,16 +5,28 @@
         public bool IsCangado { get; set; }
 
         public PlayedCard GetRoundWinner() {
-            var winner = new PlayedCard(new Card("", CardSuit.Clubs, 0), null);
+            var winners = new List<PlayedCard>();
             foreach (var card in Cards) {
-                if (card.Card.Strength == winner.Card.Strength) {
-                    return null;
+                if (winners.Count == 0) {
+                    winners.Add(card);
+                    continue;
                 }
-                if (card.Card.Strength > winner.Card.Strength) {
-                    winner = card;
+                if (card.Card.Strength == winners.First().Card.Strength) {
+                    if ((Array.IndexOf(Cards.ToArray(), card) + Array.IndexOf(Cards.ToArray(), winners.First())) % 2 == 0) {
+                        continue;
+                    }
+                    winners.Add(card);
+                }
+                if (card.Card.Strength > winners.First().Card.Strength) {
+                    winners.Clear();
+                    winners.Add(card);
                 }
             }
-            return winner;
+            if (winners.Count == 1) {
+                return winners.First();
+            }
+
+            return null;
         }
     }
 }

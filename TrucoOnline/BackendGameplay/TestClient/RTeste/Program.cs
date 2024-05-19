@@ -10,7 +10,7 @@ namespace Realtime {
             string hubUrl = "http://localhost:5089/gameHub";
             string invokeMethodName = "SubscribeToLobby";
             string onMethodName = "CardPlayed";
-            string gameId = "18046b06-b4aa-4218-8b2a-c75f2b32c064";
+            string gameId = "a319c176-b842-44fc-9835-149f0d0f1e82";
             Lobby lobby = null;
             object gameLock = new object();
 
@@ -80,6 +80,7 @@ namespace Realtime {
             });
 
             connection.InvokeAsync(invokeMethodName, gameId).Wait();
+            connection.ServerTimeout = TimeSpan.FromMinutes(10);
 
             while (true) {
                 Task.Delay(1000).Wait();
