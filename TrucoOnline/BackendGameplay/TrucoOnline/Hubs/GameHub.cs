@@ -17,7 +17,7 @@ namespace TrucoOnline.Hubs {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "lobby_" + lobbyId);
         }
 
-        public async void PlayCard(Guid lobbyId, Guid playerId, byte cardIndex) {
+        public async void PlayCard(Guid lobbyId, Guid playerId, byte cardIndex, bool playedHidden) {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
             if (lobby is null) {
                 return;
@@ -26,8 +26,12 @@ namespace TrucoOnline.Hubs {
                 Console.WriteLine("NOT THIS PLAYER TURN!");
                 return;
             }
-            lobby.PlayCard(playerId, cardIndex);
-            await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard = lobby.Games.Last().LastPlayedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
+            lobby.PlayCard(playerId, cardIndex, playedHidden);
+            var playedCard = lobby.Games.Last().LastPlayedCard;
+            if (lobby.Games.Last().LastRound.Cards.First().PlayedHidden) {
+                playedCard = new Card("HIDDEN", CardSuit.Hidden, 0);
+            }
+            await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
 
             if (lobby.Games.Last().IsLastRoundFinished()) {
                 if (lobby.Games.Last().IsGameFinished) {

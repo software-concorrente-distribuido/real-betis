@@ -29,16 +29,17 @@
             }
         }
 
-        public void PlayCard(Player player, byte cardIndex) {
+        public void PlayCard(Player player, byte cardIndex, bool playedHidden) {
             if (LastRound.IsCangado) {
                 var highestStrength = player.Cards.Max(c => c.Strength);
                 cardIndex = (byte)player.Cards.FindIndex(c => c.Strength == highestStrength);
+                playedHidden = false;
             }
             var card = player.Cards[cardIndex];
             player.Cards.RemoveAt(cardIndex);
             LastPlayedCard = card;
 
-            LastRound.Cards.Push(new PlayedCard(card, player));
+            LastRound.Cards.Push(new PlayedCard(card, player, playedHidden));
         }
 
         public void StartRound(bool isCangado) {

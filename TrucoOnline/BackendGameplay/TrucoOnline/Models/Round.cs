@@ -7,6 +7,9 @@
         public PlayedCard GetRoundWinner() {
             var winners = new List<PlayedCard>();
             foreach (var card in Cards) {
+                if (card.PlayedHidden) {
+                    continue;
+                }
                 if (winners.Count == 0) {
                     winners.Add(card);
                     continue;

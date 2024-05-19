@@ -3,6 +3,7 @@
         Clubs,
         Spades,
         Hearts,
-        Diamonds
+        Diamonds,
+        Hidden
     }
 }

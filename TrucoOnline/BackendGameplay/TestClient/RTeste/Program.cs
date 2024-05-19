@@ -10,7 +10,7 @@ namespace Realtime {
             string hubUrl = "http://localhost:5089/gameHub";
             string invokeMethodName = "SubscribeToLobby";
             string onMethodName = "CardPlayed";
-            string gameId = "a319c176-b842-44fc-9835-149f0d0f1e82";
+            string gameId = "90b0483e-9c63-48d0-a5b2-398efd33a319";
             Lobby lobby = null;
             object gameLock = new object();
 
@@ -90,6 +90,10 @@ namespace Realtime {
                         Console.WriteLine("********************");
                         Console.WriteLine("Current Round Cards:");
                         foreach (var card in lobby.Games.Last().LastRound.Cards) {
+                            if (card.Card.Suit == CardSuit.Hidden) {
+                                Console.WriteLine("-- HIDDEN -- ");
+                                continue;
+                            }
                             Console.WriteLine(card.Card.Value + " of " + card.Card.Suit);
                         }
                         Console.WriteLine("********************\n");
@@ -100,7 +104,16 @@ namespace Realtime {
                     }
                     Console.Write("Choose a card to play: ");
                     string cardValue = Console.ReadLine();
-                    connection.InvokeAsync("PlayCard", gameId, lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Id, Convert.ToInt32(cardValue)).Wait();
+                    Console.WriteLine("");
+                    Console.WriteLine("Play hidden (Y/N): ");
+                    string playHiddenString = Console.ReadLine();
+                    bool playedHidden = false;
+
+                    if (playHiddenString.ToUpper() == "Y") {
+                        playedHidden = true;
+                    }
+
+                    connection.InvokeAsync("PlayCard", gameId, lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Id, Convert.ToInt32(cardValue), playedHidden).Wait();
                     lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Cards.RemoveAt(Convert.ToInt32(cardValue));
                 }
             }

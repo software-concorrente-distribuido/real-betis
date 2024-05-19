@@ -41,10 +41,10 @@
             }
         }
 
-        public void PlayCard(Guid playerId, byte cardIndex) {
+        public void PlayCard(Guid playerId, byte cardIndex, bool playedHidden) {
             var game = Games.Last();
             var player = Players.First(p => p.Id == playerId);
-            game.PlayCard(player, cardIndex);
+            game.PlayCard(player, cardIndex, playedHidden);
             NextPlayerTurn();
         }
 
