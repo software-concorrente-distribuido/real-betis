@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using TrucoOnline.Models;
+using TrucoOnline.Models.Cards;
 
 namespace TrucoOnline.Hubs {
     public class GameHub : Hub {
@@ -29,7 +30,7 @@ namespace TrucoOnline.Hubs {
             lobby.PlayCard(playerId, cardIndex, playedHidden);
             var playedCard = lobby.Games.Last().LastPlayedCard;
             if (lobby.Games.Last().LastRound.Cards.First().PlayedHidden) {
-                playedCard = new Card("HIDDEN", CardSuit.Hidden, 0);
+                playedCard = new Hidden();
             }
             await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
 
@@ -66,8 +67,79 @@ namespace TrucoOnline.Hubs {
 
         public async void GoToNextGame(Guid lobbyId) {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
             lobby.StartGame();
             await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players });
+        }
+
+        public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            if (lobby.Players.Count == 4) {
+                Console.WriteLine("LOBBY FULL!");
+                return;
+            }
+
+            if (playerName.Length > 20) {
+                playerName = playerName.Substring(0, 20);
+            }
+
+            var player = new Player(playerName);
+
+            if (lobby.Players.Count == 0) {
+                player.IsLobbyAdmin = true;
+            }
+
+            lobby.Players.Add(player);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin });
+        }
+
+        public async void DisconnectPlayerFromLobby(Guid lobbyId, Guid playerId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null) {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+
+            if (player.IsLobbyAdmin) {
+                if (lobby.Players.Count > 1) {
+                    lobby.Players.First(p => !p.IsLobbyAdmin).IsLobbyAdmin = true;
+                }
+            }
+
+            lobby.Players.Remove(player);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId });
+        }
+
+        public void StartLobby(Guid lobbyId, Guid playerId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null) {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+            if (!player.IsLobbyAdmin) {
+                Console.WriteLine("PLAYER NOT ADMIN!");
+                return;
+            }
+
+            GoToNextGame(lobbyId);
         }
     }
 }

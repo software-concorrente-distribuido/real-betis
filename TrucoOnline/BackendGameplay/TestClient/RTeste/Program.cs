@@ -10,7 +10,7 @@ namespace Realtime {
             string hubUrl = "http://localhost:5089/gameHub";
             string invokeMethodName = "SubscribeToLobby";
             string onMethodName = "CardPlayed";
-            string gameId = "90b0483e-9c63-48d0-a5b2-398efd33a319";
+            string gameId = "5759526a-3ae2-4d85-bd6c-c4b14edbcc6d";
             Lobby lobby = null;
             object gameLock = new object();
 
@@ -79,11 +79,39 @@ namespace Realtime {
                 }
             });
 
+            connection.On<PlayerConnectedEventDTO>("PlayerConnected", param => {
+                lock (gameLock) {
+                    Console.WriteLine("****** PLAYER CONNECTED ******");
+                    Console.WriteLine("\n");
+                    Player player = new Player() { Id = param.PlayerId, DisplayName = param.DisplayName, IsLobbyAdmin = param.IsLobbyAdmin };
+                    lobby.Players.Add(player);
+                }
+            });
+
+            connection.On<PlayerDisconnectedEventDTO>("PlayerDisconnected", param => {
+                lock (gameLock) {
+                    Console.WriteLine("****** PLAYER DISCONNECTED ******");
+                    Console.WriteLine("\n");
+                    lobby.Players.Remove(lobby.Players.Find(p => p.Id == param.PlayerId));
+                }
+            });
+
             connection.InvokeAsync(invokeMethodName, gameId).Wait();
             connection.ServerTimeout = TimeSpan.FromMinutes(10);
 
             while (true) {
                 Task.Delay(1000).Wait();
+                while (lobby.Players.Count != 4) {
+                    Console.Write($"Name for Player {lobby.Players.Count + 1}: ");
+                    string playerName = Console.ReadLine();
+                    connection.InvokeAsync("ConnectGuestPlayerToLobby", gameId, playerName).Wait();
+                    Console.WriteLine();
+                    Task.Delay(1000).Wait();
+                }
+                if (lobby.Games.Count == 0) {
+                    connection.InvokeAsync("StartLobby", gameId, lobby.Players.First(p => p.IsLobbyAdmin).Id).Wait();
+                    Task.Delay(1000).Wait();
+                }
                 lock (gameLock) {
                     Console.WriteLine("Current Player: " + lobby.Players[lobby.Games.Last().CurrentPlayerIndex].DisplayName);
                     if (lobby.Games.Last().LastRound.Cards.Count > 0) {
