@@ -7,12 +7,15 @@ using System.Threading.Tasks;
 namespace Realtime {
     public class Program {
         static void Main(string[] args) {
-            string hubUrl = "http://localhost:5089/gameHub";
-            string invokeMethodName = "SubscribeToLobby";
+            string hubUrl = "http://localhost:4000/gameHub";
             string onMethodName = "CardPlayed";
-            string gameId = "5759526a-3ae2-4d85-bd6c-c4b14edbcc6d";
             Lobby lobby = null;
             object gameLock = new object();
+            Guid myPlayerId = Guid.Empty;
+            bool isCardPlayed = false;
+
+            Console.Write("Enter Lobby ID: ");
+            string LobbyId = Console.ReadLine();
 
             var connection = new HubConnectionBuilder()
                 .WithUrl(hubUrl)
@@ -20,6 +23,7 @@ namespace Realtime {
                 .Build();
 
             connection.StartAsync().Wait();
+
             connection.On<CardPlayedEventDTO>(onMethodName, param => {
                 lock (gameLock) {
                     Console.WriteLine("****** CARD PLAYED ******");
@@ -27,6 +31,7 @@ namespace Realtime {
 
                     lobby.Games.Last().CurrentPlayerIndex = param.CurrentPlayer;
                     lobby.Games.Last().LastRound.Cards.Push(new PlayedCard() { Card = param.PlayedCard, Player = lobby.Players.Find(p => p.Id == param.PlayerId) });
+                    isCardPlayed = true;
                 }
             });
 
@@ -81,6 +86,7 @@ namespace Realtime {
 
             connection.On<PlayerConnectedEventDTO>("PlayerConnected", param => {
                 lock (gameLock) {
+                    if (param.PlayerId == myPlayerId) return;
                     Console.WriteLine("****** PLAYER CONNECTED ******");
                     Console.WriteLine("\n");
                     Player player = new Player() { Id = param.PlayerId, DisplayName = param.DisplayName, IsLobbyAdmin = param.IsLobbyAdmin };
@@ -96,23 +102,40 @@ namespace Realtime {
                 }
             });
 
-            connection.InvokeAsync(invokeMethodName, gameId).Wait();
+            connection.On<SelfPlayerConnectedEventDTO>("SelfPlayerConnected", param => {
+                lock (gameLock) {
+                    Console.WriteLine("******* PLAYER CONNECTED TO LOBBY *******");
+                    Console.WriteLine("\n");
+                    lobby = param.Lobby;
+                    myPlayerId = param.PlayerId;
+                }
+            });
+
             connection.ServerTimeout = TimeSpan.FromMinutes(10);
+
+            Console.Write($"Name for Player: ");
+            string playerName = Console.ReadLine();
+            connection.InvokeAsync("ConnectGuestPlayerToLobby", LobbyId, playerName).Wait();
+            Console.WriteLine();
+            Task.Delay(1000).Wait();
+
+            while (lobby.Players.Count != 4) {
+                Task.Delay(1000).Wait();
+            }
+
+            connection.InvokeAsync("StartLobby", LobbyId, myPlayerId).Wait();
+            Task.Delay(1000).Wait();
 
             while (true) {
                 Task.Delay(1000).Wait();
-                while (lobby.Players.Count != 4) {
-                    Console.Write($"Name for Player {lobby.Players.Count + 1}: ");
-                    string playerName = Console.ReadLine();
-                    connection.InvokeAsync("ConnectGuestPlayerToLobby", gameId, playerName).Wait();
-                    Console.WriteLine();
-                    Task.Delay(1000).Wait();
-                }
-                if (lobby.Games.Count == 0) {
-                    connection.InvokeAsync("StartLobby", gameId, lobby.Players.First(p => p.IsLobbyAdmin).Id).Wait();
-                    Task.Delay(1000).Wait();
-                }
+                isCardPlayed = false;
+
                 lock (gameLock) {
+                    var currentPlayer = lobby.Players[lobby.Games.Last().CurrentPlayerIndex];
+                    var isMyTurn = currentPlayer.Id == myPlayerId;
+                    if (isMyTurn) {
+                        Console.WriteLine("[YOUR TURN]");
+                    }
                     Console.WriteLine("Current Player: " + lobby.Players[lobby.Games.Last().CurrentPlayerIndex].DisplayName);
                     if (lobby.Games.Last().LastRound.Cards.Count > 0) {
                         Console.WriteLine("********************");
@@ -126,23 +149,29 @@ namespace Realtime {
                         }
                         Console.WriteLine("********************\n");
                     }
-                    Console.WriteLine("Your Cards:");
-                    foreach (var card in lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Cards) {
-                        Console.WriteLine(card.Value + " of " + card.Suit);
-                    }
-                    Console.Write("Choose a card to play: ");
-                    string cardValue = Console.ReadLine();
-                    Console.WriteLine("");
-                    Console.WriteLine("Play hidden (Y/N): ");
-                    string playHiddenString = Console.ReadLine();
-                    bool playedHidden = false;
+                    if (isMyTurn) {
+                        Console.WriteLine("Your Cards:");
+                        foreach (var card in lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Cards) {
+                            Console.WriteLine(card.Value + " of " + card.Suit);
+                        }
+                        Console.Write("Choose a card to play: ");
+                        string cardValue = Console.ReadLine();
+                        Console.WriteLine("");
+                        Console.WriteLine("Play hidden (Y/N): ");
+                        string playHiddenString = Console.ReadLine();
+                        bool playedHidden = false;
 
-                    if (playHiddenString.ToUpper() == "Y") {
-                        playedHidden = true;
-                    }
+                        if (playHiddenString.ToUpper() == "Y") {
+                            playedHidden = true;
+                        }
 
-                    connection.InvokeAsync("PlayCard", gameId, lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Id, Convert.ToInt32(cardValue), playedHidden).Wait();
-                    lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Cards.RemoveAt(Convert.ToInt32(cardValue));
+                        connection.InvokeAsync("PlayCard", LobbyId, lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Id, Convert.ToInt32(cardValue), playedHidden).Wait();
+                        lobby.Players[lobby.Games.Last().CurrentPlayerIndex].Cards.RemoveAt(Convert.ToInt32(cardValue));
+                    }
+                }
+
+                while (!isCardPlayed) { 
+                    Task.Delay(1000).Wait();
                 }
             }
         }

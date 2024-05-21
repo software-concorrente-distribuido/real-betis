@@ -9,6 +9,9 @@
         public int Team1Points { get; set; }
         public int Team2Points { get; set; }
         public bool IsGameFinished { get; set; }
+        public bool IsTrucado { get; set; }
+        public bool TrucoAceito { get; set; }
+        public byte GameValue { get; set; }
 
         public Game() {
             Id = Guid.NewGuid();
@@ -17,6 +20,7 @@
             Rounds = new List<Round>(3) { LastRound };
             Team1Points = 0;
             Team2Points = 0;
+            GameValue = 1;
         }
 
         public void Start(List<Player> players) {
@@ -91,6 +95,10 @@
             }
 
             return null;
+        }
+
+        public void CallTruco() {
+
         }
     }
 }
