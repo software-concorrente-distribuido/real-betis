@@ -10,7 +10,7 @@
         public int Team2Points { get; set; }
         public bool IsGameFinished { get; set; }
         public bool IsTrucado { get; set; }
-        public bool TrucoAceito { get; set; }
+        public Guid? PlayerTrucadoId { get; set; }
         public byte GameValue { get; set; }
 
         public Game() {
@@ -98,7 +98,29 @@
         }
 
         public void CallTruco() {
+            IsTrucado = true;
+        }
 
+        public void AcceptTruco(bool isReturnTruco) {
+            if (GameValue == 1) {
+                GameValue = 3;
+            }
+            else {
+                GameValue += 3;
+            }
+            if (!isReturnTruco) {
+                IsTrucado = false;
+            }
+        }
+
+        public void DeclineTruco(int playerTrucadoIndex) {
+            IsTrucado = false;
+            if (playerTrucadoIndex % 2 == 0) {
+                Team1Points = 2;
+            }
+            else {
+                Team2Points = 2;
+            }
         }
     }
 }

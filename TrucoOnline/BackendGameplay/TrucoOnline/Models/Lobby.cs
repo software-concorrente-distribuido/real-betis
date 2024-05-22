@@ -27,10 +27,10 @@
                 // Não faz nada pq ficou empatado o jogo
             }
             else if (winner == 1) {
-                Team1Points++;
+                Team1Points += game.GameValue;
             }
             else if (winner == 2) {
-                Team2Points++;
+                Team2Points += game.GameValue;
             }
 
             if (Team1Points == 12 || Team2Points == 12) {

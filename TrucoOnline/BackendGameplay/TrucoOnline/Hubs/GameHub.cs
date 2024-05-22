@@ -33,6 +33,11 @@ namespace TrucoOnline.Hubs {
                 return;
             }
 
+            if (currentGame.IsTrucado) {
+                Console.WriteLine("CAN'T PLAY CARDS WHILE TRUCO IS ON!");
+                return;
+            }
+
             if (currentGame.LastRound.Cards.Count == 3 && currentGame.LastRound.Cards.All(c => c.Card.Suit == CardSuit.Hidden)) {
                 playedHidden = false;
             }
@@ -87,7 +92,7 @@ namespace TrucoOnline.Hubs {
                 return;
             }
             lobby.StartGame();
-            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players }); // Mudar para enviar somente o que precisa para cada player
         }
 
         public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName) {
@@ -176,9 +181,109 @@ namespace TrucoOnline.Hubs {
                 return;
             }
 
+            if (currentGame.GameValue == 12) {
+                Console.WriteLine("TRUCO ALREADY ON MAX VALUE!");
+                return;
+            }
+
             var playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
             var playerTrucado = lobby.Players[playerTrucadoIndex];
-            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerId, playerTrucadoId = playerTrucado.Id });
+            currentGame.CallTruco();
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id });
+        }
+
+        public async void ReturnCallTruco(Guid lobbyId, Guid playerId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null) {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+            var currentGame = lobby.Games.Last();
+            if (currentGame.GameValue == 12) {
+                Console.WriteLine("TRUCO ALREADY ON MAX VALUE!");
+                return;
+            }
+            if (!currentGame.IsTrucado) {
+                Console.WriteLine("CAN'T RETURN A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
+                return;
+            }
+            if (currentGame.PlayerTrucadoId != playerId) {
+                Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE RETURNING THE TRUCO CALL");
+                return;
+            }
+            var currentPlayer = lobby.Players[currentGame.CurrentPlayerIndex];
+            int playerTrucadoIndex = currentGame.CurrentPlayerIndex;
+            if (currentPlayer.Id == currentGame.PlayerTrucadoId) {
+                playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
+            }
+
+            var playerTrucado = lobby.Players[playerTrucadoIndex];
+
+            currentGame.AcceptTruco(true);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id });
+        }
+
+        public async void DeclineTruco(Guid lobbyId, Guid playerId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null) {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+            var currentGame = lobby.Games.Last();
+            if (!currentGame.IsTrucado) {
+                Console.WriteLine("CAN'T DECLINE A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
+                return;
+            }
+            if (currentGame.PlayerTrucadoId != playerId) {
+                Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE DECLINING THE TRUCO CALL");
+                return;
+            }
+            var currentPlayer = lobby.Players[currentGame.CurrentPlayerIndex];
+            int playerTrucadoIndex = currentGame.CurrentPlayerIndex;
+            if (currentPlayer.Id == currentGame.PlayerTrucadoId) {
+                playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
+            }
+
+            var playerTrucado = lobby.Players[playerTrucadoIndex];
+
+            currentGame.DeclineTruco(playerTrucadoIndex);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoDeclined");
+            FinishGame(lobbyId);
+        }
+
+        public async void AcceptTruco(Guid lobbyId, Guid playerId) {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null) {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null) {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+            var currentGame = lobby.Games.Last();
+            if (!currentGame.IsTrucado) {
+                Console.WriteLine("CAN'T DECLINE A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
+                return;
+            }
+            if (currentGame.PlayerTrucadoId != playerId) {
+                Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE ACCEPTING THE TRUCO CALL");
+                return;
+            }
+
+            currentGame.AcceptTruco(false);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoAccepted");
         }
     }
 }
