@@ -80,15 +80,11 @@ namespace WFTrucoTestClient {
                 lock (gameLock) {
 
                     if (param.LastRoundWinner != null) {
-                        Console.WriteLine("Last Round Winner: " + param.LastRoundWinner.Player.DisplayName + " with " + param.LastRoundWinner.Card.Value + " of " + param.LastRoundWinner.Card.Suit);
+                        SetText("Ganhador do último round: " + param.LastRoundWinner.Player.DisplayName + " com " + GetCardText(param.LastRoundWinner.Card), lastRoundWinnerLabel);
                     }
+                    SetFormObjectVisibility(param.LastRoundWinner != null, lastRoundWinnerLabel);
 
-                    if (param.NewRound.IsCangado) {
-                        cangadoLabel.Enabled = true;
-                    }
-                    else {
-                        cangadoLabel.Enabled = false;
-                    }
+                    SetFormObjectVisibility(param.NewRound.IsCangado, cangadoLabel);
 
                     SetText(param.Team1Points.ToString() + " x " + param.Team2Points.ToString(), roundScoreLabel);
                     monteButtons.ForEach(b => SetText("", b));
@@ -103,6 +99,7 @@ namespace WFTrucoTestClient {
                     SetText("Time 2: " + param.Team2Points.ToString(), team2PointsLabel);
                     SetText("0 x 0", roundScoreLabel);
                     monteButtons.ForEach(b => SetText("", b));
+                    SetFormObjectVisibility(false, lastRoundWinnerLabel);
                 }
             });
 
@@ -128,6 +125,8 @@ namespace WFTrucoTestClient {
                     SetFormObjectVisibility(true, myCardsButtons[1]);
                     SetFormObjectVisibility(true, myCardsButtons[2]);
                     SetFormObjectVisibility(true, roundScoreLabel);
+                    SetText("VOCÊ É DO TIME " + ((lobby.Players.IndexOf(myPlayer) % 2) + 1), yourTeamLabel);
+                    SetFormObjectVisibility(true, yourTeamLabel);
                     isMyTurn = myPlayerId == lobby.Players[param.Game.CurrentPlayerIndex].Id;
                     HandleIsMyTurn();
                 }
@@ -269,6 +268,7 @@ namespace WFTrucoTestClient {
             foreach (var myCardButton in myCardsButtons.ToList()) {
                 SetFormObjectEnabled(isMyTurn, myCardButton);
             }
+            SetFormObjectVisibility(isMyTurn, yourTurnLabel);
         }
     }
 }

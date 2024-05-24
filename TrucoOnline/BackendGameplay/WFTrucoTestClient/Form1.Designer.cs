@@ -46,6 +46,9 @@
             playersListLabel = new Label();
             startLobbyButton = new Button();
             roundScoreLabel = new Label();
+            yourTurnLabel = new Label();
+            yourTeamLabel = new Label();
+            lastRoundWinnerLabel = new Label();
             yourCardsBox.SuspendLayout();
             montePanel.SuspendLayout();
             SuspendLayout();
@@ -273,11 +276,49 @@
             roundScoreLabel.Text = "0 x 0";
             roundScoreLabel.Visible = false;
             // 
+            // yourTurnLabel
+            // 
+            yourTurnLabel.AutoSize = true;
+            yourTurnLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            yourTurnLabel.ForeColor = Color.ForestGreen;
+            yourTurnLabel.Location = new Point(107, 269);
+            yourTurnLabel.Name = "yourTurnLabel";
+            yourTurnLabel.Size = new Size(81, 21);
+            yourTurnLabel.TabIndex = 16;
+            yourTurnLabel.Text = "SUA VEZ!";
+            yourTurnLabel.Visible = false;
+            // 
+            // yourTeamLabel
+            // 
+            yourTeamLabel.AutoSize = true;
+            yourTeamLabel.Font = new Font("Segoe UI", 15F, FontStyle.Bold);
+            yourTeamLabel.Location = new Point(70, 19);
+            yourTeamLabel.Name = "yourTeamLabel";
+            yourTeamLabel.Size = new Size(188, 28);
+            yourTeamLabel.TabIndex = 17;
+            yourTeamLabel.Text = "VOCÊ É DO TIME 1";
+            yourTeamLabel.Visible = false;
+            // 
+            // lastRoundWinnerLabel
+            // 
+            lastRoundWinnerLabel.AutoSize = true;
+            lastRoundWinnerLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lastRoundWinnerLabel.ForeColor = SystemColors.Highlight;
+            lastRoundWinnerLabel.Location = new Point(70, 411);
+            lastRoundWinnerLabel.Name = "lastRoundWinnerLabel";
+            lastRoundWinnerLabel.Size = new Size(265, 15);
+            lastRoundWinnerLabel.TabIndex = 18;
+            lastRoundWinnerLabel.Text = "Ganhador do último round: JP com 7 de COPAS";
+            lastRoundWinnerLabel.Visible = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(lastRoundWinnerLabel);
+            Controls.Add(yourTeamLabel);
+            Controls.Add(yourTurnLabel);
             Controls.Add(roundScoreLabel);
             Controls.Add(startLobbyButton);
             Controls.Add(playersListLabel);
@@ -328,5 +369,8 @@
         private Label playersListLabel;
         private Button startLobbyButton;
         private Label roundScoreLabel;
+        private Label yourTurnLabel;
+        private Label yourTeamLabel;
+        private Label lastRoundWinnerLabel;
     }
 }
