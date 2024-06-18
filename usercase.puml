@@ -1,0 +1,26 @@
+@startuml userCaseTrucoOnline
+
+actor "Jogador" as jogador
+actor "Criador da Sala" as criadorSala
+
+jogador <|-down- criadorSala
+
+rectangle TrucoOnline {
+    usecase "Criar Conta" as criarConta
+    usecase "Entrar em Sala" as entrarSala
+    usecase "Jogar Partida" as jogarPartida
+    usecase "Criar Sala" as criarSala
+    usecase "Convidar Usuários" as convidarUsuarios
+    usecase "Personalizar Perfil" as personalizarPerfil
+}
+    jogador -right-> personalizarPerfil
+    jogador --> jogarPartida 
+    jogarPartida ..> entrarSala : <<include>>
+    jogarPartida ..> criarConta : <<include>>
+
+    criadorSala --> criarSala
+    criarSala .down.> convidarUsuarios : <<extend>>
+
+    entrarSala .up.> criarSala
+
+@enduml
