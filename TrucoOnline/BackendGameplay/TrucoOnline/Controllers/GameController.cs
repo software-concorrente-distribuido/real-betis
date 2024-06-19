@@ -41,7 +41,7 @@ namespace TrucoOnline.Controllers {
         }
 
         [HttpGet("lobbies")]
-        public ActionResult<List<Game>> FindAllLobbies()
+        public ActionResult<List<Lobby>> FindAllLobbies()
         {
             var lobbies = GameManager.Lobbies;
             return Ok(lobbies);
