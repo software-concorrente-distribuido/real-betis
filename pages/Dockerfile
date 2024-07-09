@@ -19,11 +19,9 @@ COPY --from=build /home/app/build /usr/share/nginx/html
 
 # Remove the default NGINX configuration (if any) and copy custom NGINX config
 RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx/nginx.conf /etc/nginx/conf.d
+COPY nginx/nginx.config /etc/nginx/conf.d
 
-COPY /etc/letsencrypt/live/realbetis.software/fullchain.pem /etc/nginx/ssl/fullchain.pem
-COPY /etc/letsencrypt/live/realbetis.software/privkey.pem /etc/nginx/ssl/privkey.pem
 
-EXPOSE 80 443
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
