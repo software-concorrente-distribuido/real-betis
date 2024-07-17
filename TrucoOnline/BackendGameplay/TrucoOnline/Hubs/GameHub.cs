@@ -257,7 +257,7 @@ namespace TrucoOnline.Hubs {
 
             var playerTrucado = lobby.Players[playerTrucadoIndex];
 
-            currentGame.DeclineTruco(playerTrucadoIndex);]
+            currentGame.DeclineTruco(playerTrucadoIndex);
             FinishGame(lobbyId);
         }
 
