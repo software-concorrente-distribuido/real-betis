@@ -186,11 +186,13 @@ namespace TrucoOnline.Hubs {
                 return;
             }
 
+            var playerRequestedIndex = currentGame.CurrentPlayerIndex;
+
             var playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
             var playerTrucado = lobby.Players[playerTrucadoIndex];
             currentGame.CallTruco();
             currentGame.PlayerTrucadoId = playerTrucado.Id;
-            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id, playerRequestedIndex});
         }
 
         public async void ReturnCallTruco(Guid lobbyId, Guid playerId) {
