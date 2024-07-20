@@ -34,6 +34,7 @@
         }
 
         public void PlayCard(Player player, byte cardIndex, bool playedHidden) {
+            //TODO: SE TIVER VENCEDOR NO PRIMEIRO ROUND E CANGAR ENCERRAR O GAME
             if (LastRound.IsCangado) {
                 var highestStrength = player.Cards.Max(c => c.Strength);
                 cardIndex = (byte)player.Cards.FindIndex(c => c.Strength == highestStrength);
