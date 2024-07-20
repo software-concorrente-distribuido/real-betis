@@ -47,6 +47,7 @@ public class HttpResponse {
         this.headers.putAll(headers);
     }
 
+    //So do cabecalho o corpo fica em byte[]
     @Override
     public String toString() {
         StringBuilder response = new StringBuilder();

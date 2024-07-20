@@ -39,6 +39,7 @@ class HttpParserTest {
     private byte[] generateValidPOSTTestCase() {
         String rawData = "POST / HTTP/1.1\r\n" +
                 "Host: localhost:9090\r\n" +
+                "Content-Length: 18\r\n" +
                 "Connection: keep-alive\r\n" +
                 "Upgrade-Insecure-Requests: 1\r\n" +
                 "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36\r\n" +
@@ -114,15 +115,14 @@ class HttpParserTest {
                 (
                         HttpStatus.OK,
                         "{\"message\": \"Success\"}".getBytes(),
-                        "application/json; charset=UTF-8"
+                        "application/json"
                 );
 
         String expectResponse =
                 "HTTP/1.1 200 OK\r\n" +
                         "Content-Length: 22\r\n" +
                         "Content-Type: application/json\r\n" +
-                        "\r\n" +
-                        "{\"message\": \"Success\"}";
+                        "\r\n";
 
         String resultResponseString = response.toString();
 

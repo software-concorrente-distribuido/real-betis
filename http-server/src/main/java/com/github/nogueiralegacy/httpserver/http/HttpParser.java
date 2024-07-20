@@ -33,7 +33,7 @@ public class HttpParser {
             throw new HttpException(HttpStatus.BAD_REQUEST);
 
         }
-        HttpMethod method = HttpMethod.valueOf(temp[0].toUpperCase());
+        HttpMethod method = HttpMethod.valueOf(temp[0]);
         String urlDecode = URLDecoder.decode(temp[1], StandardCharsets.UTF_8);
         String httpVersion = temp[2];
 
