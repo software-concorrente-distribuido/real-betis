@@ -1,7 +1,6 @@
 package com.github.nogueiralegacy.httpserver.core;
 
 import com.github.nogueiralegacy.httpserver.config.Configuration;
-import com.github.nogueiralegacy.httpserver.http.HttpResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public class Porteiro {
         }
     }
 
-    private static void despedeCliente(Cliente cliente) {
+    public static void despedeCliente(Cliente cliente) {
         try {
             cliente.getSOCKET().close();
             logger.info("Tchau cliente " + quantidadeClientesRespondidos + "\n");
@@ -47,16 +46,10 @@ public class Porteiro {
 
     public static void comecaTurno() {
         while (true) {
-            Cliente cliente = recebeCliente();
+            Cliente cliente = Porteiro.recebeCliente();
 
-            // Chama o Atendente
-            Handler atendente = new Atendente();
-
-            HttpResponse resposta = atendente.resolverRequisicao(cliente.getRequisicao());
-
-            cliente.setResposta(resposta);
-
-            despedeCliente(cliente);
+            // Chama recepcionista
+            Recepcionista.repassaCliente(cliente);
         }
     }
 }
