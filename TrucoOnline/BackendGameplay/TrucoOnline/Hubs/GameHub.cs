@@ -83,6 +83,12 @@ namespace TrucoOnline.Hubs {
             if (lobby.Team1Points != 12 && lobby.Team2Points != 12) {
                 GoToNextGame(lobbyId);
             }
+            else
+            {
+                //TODO NO UNITY TODOS OS JOGADORES SAO DISCONECTADOS DO LOBBY
+                //SE TIVER UM JEITO DE APENAS RESETAR O LOBBY PRA QUE OUTROS JOGADORES POSSAM CONECTAR E INICIAR OUTRO JOGO SEM A NECESSIDADE DE FICAR CRIANDO LOBBY
+                //DAR UM HARD RESET NO LOBBY
+            }
         }
 
         public async void GoToNextGame(Guid lobbyId) {
@@ -119,8 +125,6 @@ namespace TrucoOnline.Hubs {
             lobby.Players.Add(player);
             lobby.Players = lobby.Players.OrderBy(p => p.LobbyIndex).ToList();
           
-            lobby.Players.ForEach(p => Console.WriteLine("NOME: " + p.DisplayName + " | INDEX: " + lobby.Players.IndexOf(p)));
-
             SubscribeToLobby(lobbyId);
             await Clients.Caller.SendAsync("SelfPlayerConnected", new { lobby, playerId = player.Id });
             await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin, player.LobbyIndex });
@@ -146,7 +150,23 @@ namespace TrucoOnline.Hubs {
             }
 
             lobby.Players.Remove(player);
-            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId, LobbyIndex = player.LobbyIndex });
+        }
+
+        public async void DisconnectAllPlayers(Guid lobbyId)
+        {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null)
+            {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+
+            if(lobby.Players.Count > 0) { 
+                lobby.Players.Clear();
+            }
+
+            await Clients.Group("lobby_" + lobbyId).SendAsync("AllPlayersDisconnected");
         }
 
         public void StartLobby(Guid lobbyId, Guid playerId) {
@@ -232,6 +252,8 @@ namespace TrucoOnline.Hubs {
             var playerTrucado = lobby.Players[playerTrucadoIndex];
 
             currentGame.AcceptTruco(true);
+            currentGame.PlayerTrucadoId = playerTrucado.Id;
+
             await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id });
         }
 
