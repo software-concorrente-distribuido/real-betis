@@ -95,7 +95,7 @@ namespace TrucoOnline.Hubs {
             await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players }); // Mudar para enviar somente o que precisa para cada player
         }
 
-        public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName) {
+        public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName, int indexPos) {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
             if (lobby is null) {
                 Console.WriteLine("LOBBY NOT FOUND!");
@@ -110,16 +110,20 @@ namespace TrucoOnline.Hubs {
                 playerName = playerName.Substring(0, 20);
             }
 
-            var player = new Player(playerName);
+            var player = new Player(playerName, indexPos);
 
             if (lobby.Players.Count == 0) {
                 player.IsLobbyAdmin = true;
             }
 
             lobby.Players.Add(player);
+            lobby.Players = lobby.Players.OrderBy(p => p.LobbyIndex).ToList();
+          
+            lobby.Players.ForEach(p => Console.WriteLine("NOME: " + p.DisplayName + " | INDEX: " + lobby.Players.IndexOf(p)));
+
             SubscribeToLobby(lobbyId);
             await Clients.Caller.SendAsync("SelfPlayerConnected", new { lobby, playerId = player.Id });
-            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin, player.LobbyIndex });
         }
 
         public async void DisconnectPlayerFromLobby(Guid lobbyId, Guid playerId) {
