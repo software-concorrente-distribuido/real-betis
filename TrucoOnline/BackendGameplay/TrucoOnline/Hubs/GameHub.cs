@@ -85,9 +85,7 @@ namespace TrucoOnline.Hubs {
             }
             else
             {
-                //TODO NO UNITY TODOS OS JOGADORES SAO DISCONECTADOS DO LOBBY
-                //SE TIVER UM JEITO DE APENAS RESETAR O LOBBY PRA QUE OUTROS JOGADORES POSSAM CONECTAR E INICIAR OUTRO JOGO SEM A NECESSIDADE DE FICAR CRIANDO LOBBY
-                //DAR UM HARD RESET NO LOBBY
+                lobby.RestartLobby();           
             }
         }
 
@@ -150,6 +148,12 @@ namespace TrucoOnline.Hubs {
             }
 
             lobby.Players.Remove(player);
+
+            if (lobby.Players.Count == 0)
+            {
+                lobby.RestartLobby();
+            }
+
             await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId, LobbyIndex = player.LobbyIndex });
         }
 

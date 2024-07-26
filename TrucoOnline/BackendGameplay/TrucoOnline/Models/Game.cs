@@ -73,6 +73,40 @@
                     }
                 }
             }
+            else
+            {
+                if (Rounds.Count > 1)
+                {
+                    Round FirstRound = Rounds.First();
+                    if (!FirstRound.IsCangado) 
+                    {
+                        if (players.IndexOf(FirstRound.GetRoundWinner().Player) % 2 == 0)
+                        {
+                            Team1Points = 2;
+                        }
+                        else Team2Points = 2;
+                    }
+                    else
+                    {
+                        if (Rounds.Count > 2) 
+                        {
+                            Round SecondRound = Rounds[1];
+                            if (!SecondRound.IsCangado)
+                            {
+                                if (players.IndexOf(SecondRound.GetRoundWinner().Player) % 2 == 0)
+                                {
+                                    Team1Points = 2;
+                                }
+                                else Team2Points = 2;
+                            }
+                            else
+                            {
+                                IsGameFinished = true;
+                            }
+                        }
+                    }
+                }
+            }
 
             if (Team1Points == 2 || Team2Points == 2 || Rounds.Count == 3) {
                 IsGameFinished = true;

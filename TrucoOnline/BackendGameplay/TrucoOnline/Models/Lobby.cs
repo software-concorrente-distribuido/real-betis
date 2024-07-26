@@ -14,6 +14,14 @@
             Team2Points = 0;
         }
 
+        public void RestartLobby()
+        {
+            Games = new List<Game>();
+            Players = new List<Player>(4);
+            Team1Points = 0;
+            Team2Points = 0;
+        }
+
         public void StartGame() {
             var game = new Game();
             game.Start(Players);
