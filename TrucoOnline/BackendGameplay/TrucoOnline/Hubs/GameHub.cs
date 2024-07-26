@@ -2,12 +2,16 @@
 using TrucoOnline.Models;
 using TrucoOnline.Models.Cards;
 
-namespace TrucoOnline.Hubs {
-    public class GameHub : Hub {
+namespace TrucoOnline.Hubs
+{
+    public class GameHub : Hub
+    {
 
-        public async void SubscribeToLobby(Guid lobbyId) {
+        public async void SubscribeToLobby(Guid lobbyId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
@@ -15,53 +19,67 @@ namespace TrucoOnline.Hubs {
             await Clients.Caller.SendAsync("LobbySubscribed", lobby);
         }
 
-        public async void UnsubscribeFromLobby(string lobbyId) {
+        public async void UnsubscribeFromLobby(string lobbyId)
+        {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "lobby_" + lobbyId);
         }
 
-        public async void PlayCard(Guid lobbyId, Guid playerId, byte cardIndex, bool playedHidden) {
+        public async void PlayCard(Guid lobbyId, Guid playerId, byte cardIndex, bool playedHidden)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
 
             var currentGame = lobby.Games.Last();
 
-            if (currentGame.CurrentPlayerIndex != lobby.Players.FindIndex(p => p.Id == playerId)) {
+            if (currentGame.CurrentPlayerIndex != lobby.Players.FindIndex(p => p.Id == playerId))
+            {
                 Console.WriteLine("NOT THIS PLAYER TURN!");
                 return;
             }
 
-            if (currentGame.IsTrucado) {
+            if (currentGame.IsTrucado)
+            {
                 Console.WriteLine("CAN'T PLAY CARDS WHILE TRUCO IS ON!");
                 return;
             }
 
-            if (currentGame.LastRound.Cards.Count == 3 && currentGame.LastRound.Cards.All(c => c.Card.Suit == CardSuit.Hidden)) {
+            if (currentGame.LastRound.Cards.Count == 3 && currentGame.LastRound.Cards.All(c => c.Card.Suit == CardSuit.Hidden))
+            {
                 playedHidden = false;
             }
 
             lobby.PlayCard(playerId, cardIndex, playedHidden);
+
             var playedCard = lobby.Games.Last().LastPlayedCard;
-            if (currentGame.LastRound.Cards.First().PlayedHidden) {
+
+            if (currentGame.LastRound.Cards.First().PlayedHidden)
+            {
                 playedCard = new Hidden();
             }
             await Clients.Group("lobby_" + lobbyId).SendAsync("CardPlayed", new { playerId, playedCard, currentPlayer = lobby.Games.Last().CurrentPlayerIndex });
 
-            if (currentGame.IsLastRoundFinished()) {
-                if (currentGame.IsGameFinished) {
+            if (currentGame.IsLastRoundFinished())
+            {
+                if (currentGame.IsGameFinished)
+                {
                     FinishGame(lobbyId);
                 }
-                else {
+                else
+                {
                     StartRound(lobbyId);
                 }
             }
         }
 
-        public async void StartRound(Guid lobbyId) {
+        public async void StartRound(Guid lobbyId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
@@ -71,93 +89,24 @@ namespace TrucoOnline.Hubs {
             await Clients.Group("lobby_" + lobbyId).SendAsync("RoundStarted", new { newRound = lobby.Games.Last().LastRound, lastRoundWinner = winner, team1Points = lobby.Games.Last().Team1Points, team2Points = lobby.Games.Last().Team2Points });
         }
 
-        public async void FinishGame(Guid lobbyId) {
+        public async void FinishGame(Guid lobbyId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             lobby.FinishGame();
             await Clients.Group("lobby_" + lobbyId).SendAsync("GameFinished", new { Team1Points = lobby.Team1Points, Team2Points = lobby.Team2Points });
 
-            if (lobby.Team1Points != 12 && lobby.Team2Points != 12) {
+            if (lobby.Team1Points != 12 && lobby.Team2Points != 12)
+            {
                 GoToNextGame(lobbyId);
             }
-            else
-            {
-                lobby.RestartLobby();           
-            }
         }
 
-        public async void GoToNextGame(Guid lobbyId) {
-            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
-                Console.WriteLine("LOBBY NOT FOUND!");
-                return;
-            }
-            lobby.StartGame();
-            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players }); // Mudar para enviar somente o que precisa para cada player
-        }
-
-        public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName, int indexPos) {
-            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
-                Console.WriteLine("LOBBY NOT FOUND!");
-                return;
-            }
-            if (lobby.Players.Count == 4) {
-                Console.WriteLine("LOBBY FULL!");
-                return;
-            }
-
-            if (playerName.Length > 20) {
-                playerName = playerName.Substring(0, 20);
-            }
-
-            var player = new Player(playerName, indexPos);
-
-            if (lobby.Players.Count == 0) {
-                player.IsLobbyAdmin = true;
-            }
-
-            lobby.Players.Add(player);
-            lobby.Players = lobby.Players.OrderBy(p => p.LobbyIndex).ToList();
-          
-            SubscribeToLobby(lobbyId);
-            await Clients.Caller.SendAsync("SelfPlayerConnected", new { lobby, playerId = player.Id });
-            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin, player.LobbyIndex });
-        }
-
-        public async void DisconnectPlayerFromLobby(Guid lobbyId, Guid playerId) {
-            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
-                Console.WriteLine("LOBBY NOT FOUND!");
-                return;
-            }
-
-            var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
-                Console.WriteLine("PLAYER NOT FOUND!");
-                return;
-            }
-
-            if (player.IsLobbyAdmin) {
-                if (lobby.Players.Count > 1) {
-                    lobby.Players.First(p => !p.IsLobbyAdmin).IsLobbyAdmin = true;
-                }
-            }
-
-            lobby.Players.Remove(player);
-
-            if (lobby.Players.Count == 0)
-            {
-                lobby.RestartLobby();
-            }
-
-            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId, LobbyIndex = player.LobbyIndex });
-        }
-
-        public async void DisconnectAllPlayers(Guid lobbyId)
+        public async void GoToNextGame(Guid lobbyId)
         {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
             if (lobby is null)
@@ -166,50 +115,126 @@ namespace TrucoOnline.Hubs {
                 return;
             }
 
-            if(lobby.Players.Count > 0) { 
-                lobby.Players.Clear();
+            //ARRUMAR ISSO AQUI AINDA
+            Game previousGame = null;
+
+            if (lobby.Games.Count > 0)
+            {
+                previousGame = lobby.Games.Last();
             }
 
-            await Clients.Group("lobby_" + lobbyId).SendAsync("AllPlayersDisconnected");
+            lobby.StartGame();
+            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players, previousGame });
         }
 
-        public void StartLobby(Guid lobbyId, Guid playerId) {
+        public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName, int indexPos)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+            if (lobby.Players.Count == 4)
+            {
+                Console.WriteLine("LOBBY FULL!");
+                return;
+            }
+
+            if (playerName.Length > 20)
+            {
+                playerName = playerName.Substring(0, 20);
+            }
+
+            var player = new Player(playerName, indexPos);
+
+            if (lobby.Players.Count == 0)
+            {
+                player.IsLobbyAdmin = true;
+            }
+
+            lobby.Players.Add(player);
+            lobby.Players = lobby.Players.OrderBy(p => p.LobbyIndex).ToList();
+
+            SubscribeToLobby(lobbyId);
+            await Clients.Caller.SendAsync("SelfPlayerConnected", new { lobby, playerId = player.Id });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerConnected", new { playerId = player.Id, player.DisplayName, player.IsLobbyAdmin, player.LobbyIndex });
+        }
+
+        public async void DisconnectPlayerFromLobby(Guid lobbyId, Guid playerId)
+        {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null)
+            {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+
+            var player = lobby.Players.Find(p => p.Id == playerId);
+            if (player is null)
+            {
+                Console.WriteLine("PLAYER NOT FOUND!");
+                return;
+            }
+
+            if (player.IsLobbyAdmin)
+            {
+                if (lobby.Players.Count > 1)
+                {
+                    lobby.Players.First(p => !p.IsLobbyAdmin).IsLobbyAdmin = true;
+                }
+            }
+
+            lobby.Players.Remove(player);
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId });
+        }
+
+        public void StartLobby(Guid lobbyId, Guid playerId)
+        {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
+            if (player is null)
+            {
                 Console.WriteLine("PLAYER NOT FOUND!");
                 return;
             }
-            if (!player.IsLobbyAdmin) {
+            if (!player.IsLobbyAdmin)
+            {
                 Console.WriteLine("PLAYER NOT ADMIN!");
                 return;
             }
 
             GoToNextGame(lobbyId);
         }
-        public async void CallTruco(Guid lobbyId, Guid playerId) {
+        public async void CallTruco(Guid lobbyId, Guid playerId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
+            if (player is null)
+            {
                 Console.WriteLine("PLAYER NOT FOUND!");
                 return;
             }
             var currentGame = lobby.Games.Last();
 
-            if (currentGame.CurrentPlayerIndex != lobby.Players.FindIndex(p => p.Id == playerId)) {
+            if (currentGame.CurrentPlayerIndex != lobby.Players.FindIndex(p => p.Id == playerId))
+            {
                 Console.WriteLine("NOT THIS PLAYER TURN!");
                 return;
             }
 
-            if (currentGame.GameValue == 12) {
+            if (currentGame.GameValue == 12)
+            {
                 Console.WriteLine("TRUCO ALREADY ON MAX VALUE!");
                 return;
             }
@@ -220,70 +245,81 @@ namespace TrucoOnline.Hubs {
             var playerTrucado = lobby.Players[playerTrucadoIndex];
             currentGame.CallTruco();
             currentGame.PlayerTrucadoId = playerTrucado.Id;
-            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id, playerRequestedIndex});
+            await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id, playerRequestedIndex });
         }
 
-        public async void ReturnCallTruco(Guid lobbyId, Guid playerId) {
+        public async void ReturnCallTruco(Guid lobbyId, Guid playerId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
+            if (player is null)
+            {
                 Console.WriteLine("PLAYER NOT FOUND!");
                 return;
             }
             var currentGame = lobby.Games.Last();
-            if (currentGame.GameValue == 12) {
+            if (currentGame.GameValue == 12)
+            {
                 Console.WriteLine("TRUCO ALREADY ON MAX VALUE!");
                 return;
             }
-            if (!currentGame.IsTrucado) {
+            if (!currentGame.IsTrucado)
+            {
                 Console.WriteLine("CAN'T RETURN A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
                 return;
             }
-            if (currentGame.PlayerTrucadoId != playerId) {
+            if (currentGame.PlayerTrucadoId != playerId)
+            {
                 Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE RETURNING THE TRUCO CALL");
                 return;
             }
             var currentPlayer = lobby.Players[currentGame.CurrentPlayerIndex];
             int playerTrucadoIndex = currentGame.CurrentPlayerIndex;
-            if (currentPlayer.Id == currentGame.PlayerTrucadoId) {
+            if (currentPlayer.Id == currentGame.PlayerTrucadoId)
+            {
                 playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
             }
 
             var playerTrucado = lobby.Players[playerTrucadoIndex];
 
             currentGame.AcceptTruco(true);
-            currentGame.PlayerTrucadoId = playerTrucado.Id;
-
             await Clients.Group("lobby_" + lobbyId).SendAsync("TrucoCalled", new { playerTrucadoId = playerTrucado.Id });
         }
 
-        public async void DeclineTruco(Guid lobbyId, Guid playerId) {
+        public async void DeclineTruco(Guid lobbyId, Guid playerId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
+            if (player is null)
+            {
                 Console.WriteLine("PLAYER NOT FOUND!");
                 return;
             }
             var currentGame = lobby.Games.Last();
-            if (!currentGame.IsTrucado) {
+            if (!currentGame.IsTrucado)
+            {
                 Console.WriteLine("CAN'T DECLINE A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
                 return;
             }
-            if (currentGame.PlayerTrucadoId != playerId) {
+            if (currentGame.PlayerTrucadoId != playerId)
+            {
                 Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE DECLINING THE TRUCO CALL");
                 return;
             }
             var currentPlayer = lobby.Players[currentGame.CurrentPlayerIndex];
             int playerTrucadoIndex = currentGame.CurrentPlayerIndex;
-            if (currentPlayer.Id == currentGame.PlayerTrucadoId) {
+            if (currentPlayer.Id == currentGame.PlayerTrucadoId)
+            {
                 playerTrucadoIndex = (currentGame.CurrentPlayerIndex + 1) % 4;
             }
 
@@ -293,23 +329,28 @@ namespace TrucoOnline.Hubs {
             FinishGame(lobbyId);
         }
 
-        public async void AcceptTruco(Guid lobbyId, Guid playerId) {
+        public async void AcceptTruco(Guid lobbyId, Guid playerId)
+        {
             var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
-            if (lobby is null) {
+            if (lobby is null)
+            {
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
             var player = lobby.Players.Find(p => p.Id == playerId);
-            if (player is null) {
+            if (player is null)
+            {
                 Console.WriteLine("PLAYER NOT FOUND!");
                 return;
             }
             var currentGame = lobby.Games.Last();
-            if (!currentGame.IsTrucado) {
+            if (!currentGame.IsTrucado)
+            {
                 Console.WriteLine("CAN'T DECLINE A TRUCO CALL WHEN TRUCO IS NOT ALREADY CALLED");
                 return;
             }
-            if (currentGame.PlayerTrucadoId != playerId) {
+            if (currentGame.PlayerTrucadoId != playerId)
+            {
                 Console.WriteLine("THIS IS NOT THE PLAYER WHO SHOULD BE ACCEPTING THE TRUCO CALL");
                 return;
             }
