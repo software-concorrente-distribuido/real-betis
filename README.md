@@ -12,7 +12,7 @@
 Execute os comandos no terminal  
 `curl -O http://realbetis.software:8081/installer.sh`  
 `chmod +x installer.sh`  
-`./installer.sh`
+`./installer.sh`  
 Foi gerado um atalho no menu de aplicativos
 
 
