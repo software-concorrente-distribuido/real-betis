@@ -14,13 +14,13 @@ Instale o executável de acordo com o seu SO:
 ### Linux
 Execute os comandos no terminal:
 ```
-curl -O http://realbetis.software:8081/installer.sh`
+curl -O http://realbetis.software:8081/installer.sh
 ```
 ```
-chmod +x installer.sh`
+chmod +x installer.sh
 ```
 ```
-sudo ./installer.sh` 
+sudo ./installer.sh
 ```
 Foi gerado um atalho no menu de aplicativos e pronto! Agora é só se divertir 😄
 #
