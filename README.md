@@ -9,7 +9,7 @@
 [64bits](http://realbetis.software:8081/win64Build.zip)
 
 ### Linux
-Execute os comandos no terminal 
+Execute os comandos no terminal  
 `curl -O http://realbetis.software:8081/installer.sh`  
 `chmod +x installer.sh`  
 `./installer.sh`
