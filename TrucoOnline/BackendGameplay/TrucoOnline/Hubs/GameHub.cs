@@ -19,7 +19,7 @@ namespace TrucoOnline.Hubs
             await Clients.Caller.SendAsync("LobbySubscribed", lobby);
         }
 
-        public async void UnsubscribeFromLobby(string lobbyId)
+        public async void UnsubscribeFromLobby(Guid lobbyId)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "lobby_" + lobbyId);
         }
@@ -114,17 +114,9 @@ namespace TrucoOnline.Hubs
                 Console.WriteLine("LOBBY NOT FOUND!");
                 return;
             }
-
-            //ARRUMAR ISSO AQUI AINDA
-            Game previousGame = null;
-
-            if (lobby.Games.Count > 0)
-            {
-                previousGame = lobby.Games.Last();
-            }
-
+            
             lobby.StartGame();
-            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players, previousGame });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("NextGameStarted", new { game = lobby.Games.Last(), players = lobby.Players });
         }
 
         public async void ConnectGuestPlayerToLobby(Guid lobbyId, string playerName, int indexPos)
@@ -186,7 +178,23 @@ namespace TrucoOnline.Hubs
             }
 
             lobby.Players.Remove(player);
-            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId });
+            await Clients.Group("lobby_" + lobbyId).SendAsync("PlayerDisconnected", new { playerId, LobbyIndex = player.LobbyIndex });
+        }
+
+        public async void DisconnectAllPlayers(Guid lobbyId)
+        {
+            var lobby = GameManager.Lobbies.Find(g => g.Id == lobbyId);
+            if (lobby is null)
+            {
+                Console.WriteLine("LOBBY NOT FOUND!");
+                return;
+            }
+
+            if (lobby.Players.Count > 0) {
+                lobby.Players.Clear();
+            }
+
+            await Clients.Group("lobby_" + lobbyId).SendAsync("AllPlayersDisconnected");
         }
 
         public void StartLobby(Guid lobbyId, Guid playerId)
