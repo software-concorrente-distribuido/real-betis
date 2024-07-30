@@ -7,7 +7,7 @@
 ### Windows
 Instale o executável de acordo com o seu SO:
 
-[Win 32bits](http://realbetis.software:8081/win32Build.zip)  
+[Win 32bits](https://github.com/software-concorrente-distribuido/real-betis/blob/2638a41e4f735523fda7ad9c22232754beaaa26b/cliente/win32Build.zip)  
 [Win 64bits](http://realbetis.software:8081/win64Build.zip)
 #
 
