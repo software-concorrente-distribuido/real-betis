@@ -8,9 +8,9 @@
 Instale o executável de acordo com o seu SO:
 
 #### 32bits
-[![Download zip](https://custom-icon-badges.demolab.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download zip")](https://github.com/software-concorrente-distribuido/real-betis/releases/download/untagged-3e82cd7ffc6e46bb60fd/win32Build.zip)  
+[![Download zip](https://custom-icon-badges.demolab.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download zip")](https://github.com/software-concorrente-distribuido/real-betis/releases/download/1.0.0/win32Build.zip)  
 #### 64bits
-[![Download zip](https://custom-icon-badges.demolab.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download zip")](https://github.com/software-concorrente-distribuido/real-betis/releases/download/untagged-425d0fcb0c109b91e3b5/win64Build.zip)  
+[![Download zip](https://custom-icon-badges.demolab.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download zip")](https://github.com/software-concorrente-distribuido/real-betis/releases/download/1.0.0/win64Build.zip)  
 
 ### Linux
 Execute os comandos no terminal:
