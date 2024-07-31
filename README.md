@@ -1,6 +1,5 @@
 # Real Betis
-## Truco
-[truco](https://www.canva.com/design/DAGCrxVoyTc/jdYplWttoWTvX94xMlWW5w/edit)
+## Truco Goiano
 
 ## Como Jogar?
 
